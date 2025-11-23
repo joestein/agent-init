@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    ports:
+      - "8001:8001"
+    environment:
+      MCP_TIME_PORT: 8001
+    restart: unless-stopped
+
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      MCP_TIME_SERVER_URL: http://mcp:8001
+      PORT: 8000
+    depends_on:
+      - mcp
+    restart: unless-stopped
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      CHAT_API_URL: http://agent:8000/chat
+    depends_on:
+      - agent
+    restart: unless-stopped
